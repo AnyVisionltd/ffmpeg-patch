@@ -1,0 +1,26 @@
+diff --git a/libavformat/httpauth.c b/libavformat/httpauth.c
+index 4f79c78edc..0e57c5c3e5 100644
+--- a/libavformat/httpauth.c
++++ b/libavformat/httpauth.c
+@@ -101,12 +101,21 @@ void ff_http_auth_handle_header(HTTPAuthState *state, const char *key,
+                                state);
+         } else if (av_stristart(value, "Digest ", &p) &&
+                    state->auth_type <= HTTP_AUTH_DIGEST) {
++            HTTPAuthState state_copy;
++            const char* algorithm;
++            memcpy(&state_copy, state, sizeof(state_copy));
++
+             state->auth_type = HTTP_AUTH_DIGEST;
+             memset(&state->digest_params, 0, sizeof(DigestParams));
+             state->realm[0] = 0;
+             state->stale = 0;
+             ff_parse_key_value(p, (ff_parse_key_val_cb) handle_digest_params,
+                                state);
++            algorithm = state->digest_params.algorithm;
++            if (strcmp(algorithm, "") && strcmp(algorithm, "MD5") && strcmp(algorithm, "MD5-sess")) {
++                memcpy(state, &state_copy, sizeof(state_copy));
++                return;
++            }
+             choose_qop(state->digest_params.qop,
+                        sizeof(state->digest_params.qop));
+             if (!av_strcasecmp(state->digest_params.stale, "true"))
